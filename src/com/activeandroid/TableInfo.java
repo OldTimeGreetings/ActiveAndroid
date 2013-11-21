@@ -29,18 +29,18 @@ import com.activeandroid.annotation.Table;
 import com.activeandroid.util.Log;
 
 public final class TableInfo {
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 	// PRIVATE MEMBERS
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 
 	private Class<? extends Model> mType;
 	private String mTableName;
 
 	private Map<Field, String> mColumnNames = new HashMap<Field, String>();
 
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 	// CONSTRUCTORS
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 
 	public TableInfo(Class<? extends Model> type) {
 		mType = type;
@@ -48,25 +48,24 @@ public final class TableInfo {
 		final Table tableAnnotation = type.getAnnotation(Table.class);
 		if (tableAnnotation != null) {
 			mTableName = tableAnnotation.name();
-		}
-		else {
+		} else {
 			mTableName = type.getSimpleName();
 		}
 
-		List<Field> fields = new ArrayList<Field>(Arrays.asList(type.getDeclaredFields()));
-		fields.add(getIdField(type));
+		List<Field> fields = getDeclaredFields(type);
 
 		for (Field field : fields) {
 			if (field.isAnnotationPresent(Column.class)) {
-				final Column columnAnnotation = field.getAnnotation(Column.class);
+				final Column columnAnnotation = field
+						.getAnnotation(Column.class);
 				mColumnNames.put(field, columnAnnotation.name());
 			}
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 	// PUBLIC METHODS
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 
 	public Class<? extends Model> getType() {
 		return mType;
@@ -84,23 +83,41 @@ public final class TableInfo {
 		return mColumnNames.get(field);
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 	// PRIVATE METHODS
-	//////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
 
 	private Field getIdField(Class<?> type) {
 		if (type.equals(Model.class)) {
 			try {
 				return type.getDeclaredField("mId");
-			}
-			catch (NoSuchFieldException e) {
+			} catch (NoSuchFieldException e) {
 				Log.e("Impossible!", e);
 			}
-		}
-		else if (type.getSuperclass() != null) {
+		} else if (type.getSuperclass() != null) {
 			return getIdField(type.getSuperclass());
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get declared fields from the given class & it's ancestors
+	 * 
+	 * http://luan-itworld.blogspot.com.es/2013/08/activeandroid-model-
+	 * inheritance.html
+	 * 
+	 * @param type
+	 *            class
+	 * @return
+	 */
+	private List<Field> getDeclaredFields(Class<?> type) {
+		List<Field> fields = new ArrayList<Field>();
+		if (type.getSuperclass() != null
+				&& type.getSuperclass() != Object.class) {
+			fields.addAll(getDeclaredFields(type.getSuperclass()));
+		}
+		fields.addAll(Arrays.asList(type.getDeclaredFields()));
+		return fields;
 	}
 }
